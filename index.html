@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Placar Torneio Trojan</title>
+<style>
+  @font-face {
+    font-family: 'Big Noodle Titling';
+    /* Usa a fonte instalada no computador; se não houver, tenta o arquivo em assets/fonts. */
+    src: local('BigNoodleTitling Oblique'), local('BigNoodleTitling-Oblique'),
+         url('assets/fonts/big_noodle_titling_oblique.ttf') format('truetype');
+    font-display: block;
+  }
+  :root {
+    --bg: #0d1417;
+    --painel: #162026;
+    --campo: #0f181c;
+    --borda: #2a3740;
+    --texto: #e9eef0;
+    --suave: #93a3ab;
+    --amarelo: #f5c400;
+    --perigo: #ff7a7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--texto);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 432px);
+    gap: 24px;
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; padding: 16px; }
+  }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  .painel {
+    background: var(--painel);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 20px;
+    align-self: start;
+    min-width: 0;
+  }
+  fieldset { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
+  legend { font-weight: 600; margin-bottom: 8px; padding: 0; }
+  .versoes { display: flex; gap: 8px; }
+  .versoes label {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+  }
+  .versoes input { position: absolute; opacity: 0; pointer-events: none; }
+  .versoes label:has(input:checked) { border-color: var(--amarelo); color: var(--amarelo); }
+  .versoes label:has(input:focus-visible) { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+
+  .times { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 560px) { .times { grid-template-columns: 1fr; } }
+  .time {
+    background: var(--campo);
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    padding: 14px;
+    min-width: 0;
+  }
+  .time h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--suave); margin: 0 0 10px; }
+  .campo-label { display: block; color: var(--suave); font-size: 13px; margin: 0 0 4px; }
+  select, input[type=number] {
+    width: 100%;
+    background: var(--bg);
+    color: var(--texto);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: inherit;
+    margin-bottom: 12px;
+  }
+  input[type=number] { font-size: 22px; font-weight: 700; }
+  .jogadores { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+  .jogadores button, .acao {
+    background: var(--bg);
+    color: var(--texto);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 8px;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+  }
+  .jogadores button:hover, .acao:hover { border-color: var(--amarelo); }
+  .jogadores .qtd {
+    background: var(--amarelo);
+    color: #111;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 12px;
+    min-width: 22px;
+    text-align: center;
+    padding: 0 6px;
+  }
+  .acao { width: 100%; justify-content: center; color: var(--suave); margin-bottom: 12px; }
+  .marcados { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .marcados li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--painel);
+    border-radius: 6px;
+    padding: 4px 4px 4px 10px;
+    font-size: 13px;
+  }
+  .marcados button {
+    background: none;
+    border: 0;
+    color: var(--perigo);
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .marcados button:hover { background: rgba(255,122,122,.12); }
+  .vazio { color: var(--suave); font-size: 13px; margin: 0; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+
+  #exportar {
+    width: 100%;
+    padding: 12px;
+    font: inherit;
+    font-weight: 700;
+    background: var(--amarelo);
+    color: #111;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #exportar:focus-visible { outline-color: #fff; }
+  #status { min-height: 1.4em; margin: 10px 0 0; color: var(--suave); font-size: 13px; }
+  .preview { position: sticky; top: 24px; align-self: start; display: flex; justify-content: center; }
+  @media (max-width: 860px) { .preview { position: static; order: -1; } }
+  canvas {
+    width: 100%;
+    max-width: 432px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+  }
+</style>
+</head>
+<body>
+<main>
+  <section class="painel">
+    <h1>Placar — Fim de Jogo</h1>
+
+    <fieldset>
+      <legend>Versão da arte</legend>
+      <div class="versoes" id="versoes"></div>
+    </fieldset>
+
+    <div class="times" id="times"></div>
+
+    <button id="exportar" type="button">Exportar PNG</button>
+    <p id="status" role="status"></p>
+  </section>
+
+  <section class="preview">
+    <canvas id="arte" width="1080" height="1920" aria-label="Prévia da arte do placar"></canvas>
+  </section>
+</main>
+
+<script>
+// ---------- Dados ----------
+// Fundos: arte completa SEM logos, placar e nomes (1080x1920).
+const VERSOES = [
+  { nome: 'Versão 1 (escura)', src: 'assets/fundo-1.png' },
+  { nome: 'Versão 2 (dourada)', src: 'assets/fundo-2.png' },
+];
+
+// Elencos conforme a súmula. goleiro: true marca o (G).
+const TIMES = {
+  preto: {
+    nome: 'Blacks', cor: 'Preto', logo: 'assets/logos/blacks.png',
+    jogadores: ['Welligthon*', 'Iago', 'Francinaldo', 'Heverton', 'Lucas', 'Edson', 'Andrew', 'Rodrigo'],
+  },
+  branco: {
+    nome: 'Pinguim Albino', cor: 'Branco', logo: 'assets/logos/pinguim-albino.png',
+    jogadores: ['Idel*', 'Codo', 'Joaquin', 'Ricardo Oliveira', 'Gabs', 'Igor', 'Anthony Amorim', 'Amarildo'],
+  },
+  vermelho: {
+    nome: 'Red Team', cor: 'Vermelho', logo: 'assets/logos/red-team.png',
+    jogadores: ['Garcez*', 'Esaú', 'Jp', 'Raimundo', 'Emershow', 'Tony', 'Felipe', 'Allyson'],
+  },
+  amarelo: {
+    nome: 'Brasília Amarela', cor: 'Amarelo', logo: 'assets/logos/brasilia-amarela.png',
+    jogadores: ['Rafael*', 'Pedim', 'Gustavo', 'Luiz', 'Desne', 'Francisco Eduardo', 'Guto', 'João Carlos'],
+  },
+};
+const GOL_CONTRA = 'Gol contra';
+
+// Posições medidas na arte original (1080x1920).
+const LAYOUT = {
+  fonte: 'Big Noodle Titling',
+  logo: { tamanho: 335, y: 795, esquerda: 302, direita: 795 },
+  placar: { y: 1175, tamanho: 140, cor: '#111111', esquerda: 250, direita: 834 },
+  nomes: {
+    // limite: os nomes param acima da faixa "A.A.A TROJAN" de baixo
+    // topo: vão de ~40px entre a caixa do placar (base em y=1221) e o topo do 1º nome
+    topo: 1289, limite: 1740, passo: 78, tamanho: 76, larguraMax: 400, espacamento: 0,
+    escalaX: 0.6, // tamanho do "x" em "X2" relativo ao nome
+    esquerda: { x: 150, alinhamento: 'left', cor: '#F5C400' },
+    direita: { x: 897, alinhamento: 'right', cor: '#FFFFFF' },
+  },
+};
+
+// ---------- Estado ----------
+// Placar e gols ficam guardados por time: trocar o time de um lado e voltar não perde nada.
+const estado = {
+  versao: 0,
+  lados: ['preto', 'branco'],
+  placar: Object.fromEntries(Object.keys(TIMES).map((id) => [id, 0])),
+  gols: Object.fromEntries(Object.keys(TIMES).map((id) => [id, []])),
+};
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('arte');
+const ctx = canvas.getContext('2d');
+const status = $('status');
+const imagens = {}; // src -> Image | null
+
+function carregarImagem(src) {
+  if (src in imagens) return Promise.resolve(imagens[src]);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => { imagens[src] = img; resolve(img); };
+    img.onerror = () => { imagens[src] = null; resolve(null); };
+    img.src = src;
+  });
+}
+
+const nomeJogador = (j) => j.replace('*', '');
+const ehGoleiro = (j) => j.endsWith('*');
+
+// Nome em maiúsculas (a fonte tem acentos).
+function paraFonte(texto) {
+  return texto.toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+// Agrupa gols repetidos do mesmo jogador ("IAGO x2"). Cada linha vira trechos
+// de texto para o "x" sair menor que o resto.
+function linhasDeGols(gols) {
+  const contagem = new Map();
+  gols.forEach((g) => contagem.set(g, (contagem.get(g) || 0) + 1));
+  return [...contagem].map(([nome, n]) => {
+    const trechos = [{ t: paraFonte(nome), escala: 1 }];
+    if (n > 1) trechos.push({ t: ' ', escala: 1 }, { t: 'X', escala: LAYOUT.nomes.escalaX }, { t: String(n), escala: 1 });
+    return trechos;
+  });
+}
+
+// ---------- Desenho ----------
+function texto(t, x, y, tamanho, cor, alinhamento, espacamento = 0) {
+  ctx.font = `${tamanho}px "${LAYOUT.fonte}"`;
+  ctx.letterSpacing = `${espacamento}px`;
+  ctx.textAlign = alinhamento;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = cor;
+  ctx.fillText(t, x, y);
+  ctx.letterSpacing = '0px';
+}
+
+function desenharLogo(timeId, cx) {
+  const img = imagens[TIMES[timeId].logo];
+  if (!img) return;
+  const L = LAYOUT.logo;
+  const escala = L.tamanho / Math.max(img.width, img.height);
+  const w = img.width * escala, h = img.height * escala;
+  ctx.drawImage(img, cx - w / 2, L.y - h / 2, w, h);
+}
+
+function desenharNomes(linhas, lado) {
+  const N = LAYOUT.nomes;
+  if (!linhas.length) return;
+  // Muitos artilheiros: aperta o espaçamento para caber até o limite.
+  const passo = Math.min(N.passo, (N.limite - N.topo) / linhas.length);
+  const tamanhoBase = Math.min(N.tamanho, passo);
+  const medir = (t, tamanho) => {
+    ctx.font = `${tamanho}px "${LAYOUT.fonte}"`;
+    ctx.letterSpacing = `${N.espacamento}px`;
+    const w = ctx.measureText(t).width;
+    ctx.letterSpacing = '0px';
+    return w;
+  };
+  const largura = (trechos, tamanho) =>
+    trechos.reduce((soma, { t, escala }) => soma + medir(t, tamanho * escala), 0);
+
+  linhas.forEach((trechos, i) => {
+    let tamanho = tamanhoBase;
+    let total = largura(trechos, tamanho);
+    if (total > N.larguraMax) {
+      tamanho *= N.larguraMax / total;
+      total = largura(trechos, tamanho);
+    }
+    // Desenha trecho a trecho, da esquerda para a direita, na mesma linha de base.
+    let x = lado.alinhamento === 'right' ? lado.x - total : lado.x;
+    const y = N.topo + i * passo + tamanhoBase * 0.35;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.45)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 3;
+    trechos.forEach(({ t, escala }) => {
+      texto(t, x, y, tamanho * escala, lado.cor, 'left', N.espacamento);
+      x += medir(t, tamanho * escala);
+    });
+    ctx.restore();
+  });
+}
+
+function desenhar() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const fundo = imagens[VERSOES[estado.versao].src];
+  if (fundo) {
+    ctx.drawImage(fundo, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#0b1a1f';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#93a3ab';
+    ctx.font = '36px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Fundo não encontrado: ${VERSOES[estado.versao].src}`, 540, 300);
+  }
+
+  const [a, b] = estado.lados;
+  desenharLogo(a, LAYOUT.logo.esquerda);
+  desenharLogo(b, LAYOUT.logo.direita);
+
+  const P = LAYOUT.placar;
+  texto(String(estado.placar[a]), P.esquerda, P.y, P.tamanho, P.cor, 'center');
+  texto(String(estado.placar[b]), P.direita, P.y, P.tamanho, P.cor, 'center');
+
+  desenharNomes(linhasDeGols(estado.gols[a]), LAYOUT.nomes.esquerda);
+  desenharNomes(linhasDeGols(estado.gols[b]), LAYOUT.nomes.direita);
+}
+
+// ---------- Interface ----------
+VERSOES.forEach((v, i) => {
+  const label = document.createElement('label');
+  const input = document.createElement('input');
+  input.type = 'radio';
+  input.name = 'versao';
+  input.value = i;
+  input.checked = i === 0;
+  input.addEventListener('change', () => { estado.versao = i; desenhar(); });
+  label.append(input, ` ${v.nome}`);
+  $('versoes').appendChild(label);
+});
+
+function el(tag, props = {}, ...filhos) {
+  const e = Object.assign(document.createElement(tag), props);
+  e.append(...filhos);
+  return e;
+}
+
+// focoForcado: chave data-foco a focar depois do re-render (ex.: após remover um gol).
+function renderizarTimes(focoForcado) {
+  const container = $('times');
+  const foco = focoForcado || document.activeElement?.dataset?.foco; // mantém o foco após re-render
+  container.replaceChildren();
+
+  estado.lados.forEach((timeId, i) => {
+    const time = TIMES[timeId];
+    const gols = estado.gols[timeId];
+    const lab = i === 0 ? 'esquerda' : 'direita';
+    const box = el('div', { className: 'time' });
+    box.append(el('h2', { textContent: `Time da ${lab}` }));
+
+    // Seleção do time (o time do outro lado fica desabilitado)
+    const select = el('select', { id: `time-${i}` });
+    select.dataset.foco = `time-${i}`;
+    Object.entries(TIMES).forEach(([id, t]) => {
+      select.append(el('option', {
+        value: id,
+        textContent: `${t.nome} (${t.cor})`,
+        selected: id === timeId,
+        disabled: id === estado.lados[1 - i],
+      }));
+    });
+    select.addEventListener('change', () => trocarTime(i, select.value));
+    box.append(el('label', { className: 'campo-label', htmlFor: `time-${i}`, textContent: 'Time' }), select);
+
+    // Placar
+    const placar = el('input', { type: 'number', id: `placar-${i}`, min: 0, max: 99, value: estado.placar[timeId] });
+    placar.dataset.foco = `placar-${i}`;
+    placar.addEventListener('input', () => {
+      estado.placar[timeId] = Math.min(99, Math.max(0, parseInt(placar.value, 10) || 0));
+      desenhar();
+    });
+    box.append(el('label', { className: 'campo-label', htmlFor: `placar-${i}`, textContent: 'Gols (atualiza sozinho, mas pode editar)' }), placar);
+
+    // Lista de jogadores: clicar adiciona um gol
+    box.append(el('span', { className: 'campo-label', textContent: 'Toque no jogador que marcou' }));
+    const grade = el('div', { className: 'jogadores' });
+    time.jogadores.forEach((j, k) => {
+      const nome = nomeJogador(j);
+      const qtd = gols.filter((g) => g === nome).length;
+      const botao = el('button', { type: 'button' },
+        el('span', { textContent: nome + (ehGoleiro(j) ? ' (G)' : '') }));
+      if (qtd) botao.append(el('span', { className: 'qtd', textContent: qtd }));
+      botao.dataset.foco = `jog-${i}-${k}`;
+      botao.setAttribute('aria-label', `Adicionar gol de ${nome}${qtd ? `, já tem ${qtd}` : ''}`);
+      botao.addEventListener('click', () => adicionarGol(i, nome));
+      grade.append(botao);
+    });
+    box.append(grade);
+    const contra = el('button', { type: 'button', className: 'acao', textContent: '+ Gol contra' });
+    contra.dataset.foco = `contra-${i}`;
+    contra.addEventListener('click', () => adicionarGol(i, GOL_CONTRA));
+    box.append(contra);
+
+    // Gols marcados, com remoção
+    box.append(el('span', { className: 'campo-label', textContent: 'Gols adicionados' }));
+    if (!gols.length) {
+      box.append(el('p', { className: 'vazio', textContent: 'Nenhum gol ainda.' }));
+    } else {
+      const lista = el('ul', { className: 'marcados' });
+      gols.forEach((g, k) => {
+        const remover = el('button', { type: 'button', textContent: 'Remover' });
+        remover.dataset.foco = `rem-${i}-${k}`;
+        remover.setAttribute('aria-label', `Remover gol ${k + 1} de ${g}`);
+        remover.addEventListener('click', () => removerGol(i, k));
+        lista.append(el('li', {}, el('span', { textContent: `${k + 1}. ${g}` }), remover));
+      });
+      box.append(lista);
+    }
+
+    container.append(box);
+  });
+
+  if (foco) container.querySelector(`[data-foco="${foco}"]`)?.focus();
+}
+
+function adicionarGol(i, nome) {
+  const timeId = estado.lados[i];
+  estado.gols[timeId].push(nome);
+  estado.placar[timeId] = estado.gols[timeId].length;
+  atualizar();
+}
+
+function removerGol(i, k) {
+  const timeId = estado.lados[i];
+  const gols = estado.gols[timeId];
+  gols.splice(k, 1);
+  estado.placar[timeId] = gols.length;
+  // Foco vai para o próximo "Remover" (ou o anterior); sem gols, para "+ Gol contra".
+  atualizar(gols.length ? `rem-${i}-${Math.min(k, gols.length - 1)}` : `contra-${i}`);
+}
+
+function trocarTime(i, timeId) {
+  if (timeId === estado.lados[1 - i]) return; // opção desabilitada; não deveria acontecer
+  estado.lados[i] = timeId;
+  atualizar();
+}
+
+function atualizar(focoForcado) {
+  renderizarTimes(focoForcado);
+  desenhar();
+}
+
+$('exportar').addEventListener('click', () => {
+  const [a, b] = estado.lados;
+  const slug = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const nomeArquivo = `placar-${slug(TIMES[a].nome)}-${estado.placar[a]}x${estado.placar[b]}-${slug(TIMES[b].nome)}.png`;
+  try {
+    canvas.toBlob((blob) => {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = nomeArquivo;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      status.textContent = `Exportado: ${nomeArquivo}`;
+    }, 'image/png');
+  } catch (err) {
+    // Aberto direto do disco (file://), o navegador bloqueia a exportação.
+    status.textContent = 'O navegador bloqueou a exportação. Abra a página por um servidor (GitHub Pages, Netlify ou "python -m http.server").';
+  }
+});
+
+// ---------- Início ----------
+(async () => {
+  renderizarTimes();
+  desenhar();
+  await Promise.all([
+    ...VERSOES.map((v) => carregarImagem(v.src)),
+    ...Object.values(TIMES).map((t) => carregarImagem(t.logo)),
+    // Se a fonte falhar, segue em frente e avisa abaixo (não pode travar o desenho).
+    document.fonts.load(`64px "${LAYOUT.fonte}"`).catch(() => null),
+  ]);
+  const fonteOk = [...document.fonts].some((f) => f.family.replace(/"/g, '') === LAYOUT.fonte && f.status === 'loaded');
+  if (!fonteOk) {
+    status.textContent = 'Fonte Big Noodle Titling Oblique não encontrada. Instale a fonte no computador (ou coloque o arquivo em assets/fonts) e recarregue a página.';
+  }
+  desenhar();
+})();
+</script>
+</body>
+</html>
